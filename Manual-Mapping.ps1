@@ -3,12 +3,15 @@
 function Get-CMPrimaryDevice {
     param($Identity)
 
+    $CurrentLocation = Get-Location
     # Import the ConfigurationManager.psd1 module 
     Import-Module "$($ENV:SMS_ADMIN_UI_PATH)\..\ConfigurationManager.psd1"
     # Set the current location to be the site code.
+
     Set-Location "P01:"
     $computers = (Get-CMUserDeviceAffinity -UserName "govnet\$identity").ResourceName
-    Set-Location "H:\"
+    Write-Host $CurrentLocation
+    Set-Location $CurrentLocation
 
     return $computers
 }
@@ -38,8 +41,8 @@ function Get-RegMappedDrive {
     $SID=(Get-ADUser $UserName).SID.Value
 
     $keypath = "$sid\Network"
-    $hkeytype = [Microsoft.Win32.RegistryHive]::Users
-    $basekey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($hkeytype,$ComputerName)
+    # $hkeytype = [Microsoft.Win32.RegistryHive]::Users
+    # $basekey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($hkeytype,$ComputerName)
 
     # $computername
     # $username
@@ -47,6 +50,8 @@ function Get-RegMappedDrive {
     # $keypath
 
     if (Test-Connection -ComputerName $ComputerName -count 1 -ea 0) {
+        $hkeytype = [Microsoft.Win32.RegistryHive]::Users
+        $basekey = [Microsoft.Win32.RegistryKey]::OpenRemoteBaseKey($hkeytype,$ComputerName)
 
         try {
             $subkey = $basekey.OpenSubKey($keypath,$true)
@@ -113,6 +118,8 @@ function Set-RegMapDrive {
 
 # Main 
 # Select User
+Clear-Host
+
 $identity = Select-User
 $sid=(Get-ADUser $identity).SID.Value
 
@@ -135,35 +142,42 @@ if ($computers) {
     } else {
         $Computer = $computers
     }
+
+    # Write-Host "Computer selected $computer" -ForegroundColor Green
 } else {
     Write-Host "No computer(s) associated found" -ForegroundColor Red
+    $computer = Read-Host "Please provide the computer name"
 }
-
-Write-Host "Computer selected $computer" -ForegroundColor Green
-
 
 # ---------------------------
 # Unit Test
 # $identity = "SCHAAPP"
-# $computer = "aud325015v"
+# $computer = "R90N48XJ"
 # ---------------------------
 
+Write-Host "Computer selected $computer" -ForegroundColor Green
+
+# Check network connectivity
+if (Test-Connection -ComputerName $Computer -count 1 -ea 0) {
+
+    Write-Host "List of existing Drives"
+    Get-RegMappedDrive -ComputerName $Computer -UserName $identity
+
+    $Choice = Read-Host "Wanna map a new net drive? (y/n)"
+
+    if ($Choice -ieq 'y') {
+        $Letter = Read-Host "New Drive Letter"
+        $Path = Read-Host "Provide Drive Path"
+        Set-RegMapDrive -ComputerName $Computer -UserName $identity -DriveLetter $Letter -DrivePath $Path
+        Get-RegMappedDrive -ComputerName $Computer -UserName $identity
+    }
+
+} else {
+    Write-Host "Ping ... $computer is not responding. Possibly it is not online" -ForegroundColor Red
+}
 
 # Show GPO Report in IE
 # Write-Host "GPO Report for Map Drive Policy"
 # Get-GPOResultReport -ComputerName $Computer -UserName $identity
-
-
-Write-Host "List of existing Drives"
-Get-RegMappedDrive -ComputerName $Computer -UserName $identity
-
-$Choice = Read-Host "Wanna map a new net drive? (y/n)"
-
-if ($Choice -ieq 'y') {
-    $Letter = Read-Host "New Drive Letter"
-    $Path = Read-Host "Provide Drive Path"
-    Set-RegMapDrive -ComputerName $Computer -UserName $identity -DriveLetter $Letter -DrivePath $Path
-    Get-RegMappedDrive -ComputerName $Computer -UserName $identity
-}
 
 Write-Host "Bye"

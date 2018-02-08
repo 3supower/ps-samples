@@ -17,19 +17,6 @@ function Show-Bye {
     Write-Host "Bye"
 }
 
-# Function to create Exchange PSSession 
-Function Connect-Exch {
-    [CmdletBinding()]
-	Param ([parameter()][string]$ConnectionUri = "http://dc1wexcamb01.govnet.nsw.gov.au/PowerShell/")
-    if (!(Get-PSSession | Where-Object { $_.ConfigurationName -eq "Microsoft.Exchange" })) { 
-        Write-Host "Connecting Exchange Server... `nPlease wait..." -ForegroundColor DarkGreen
-        $session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $ConnectionUri
-        Import-Module (Import-PSSession $session -AllowClobber) -Global
-    } else {
-        Write-Host "Existing Exch Session" -ForegroundColor DarkBlue
-    }
-}
-
 function Set-FullAccess {
     param ($EmailboxName, $UserName)
     $Granted = $true
@@ -83,19 +70,8 @@ function Remove-SendAsAccess {
     try { 
         Get-Mailbox $EmailBoxName | Remove-ADPermission -User $UserName -ExtendedRights "Send As" -ErrorAction Stop -WarningAction Stop -Confirm:$false
         Write-Host "Send As removed" -ForegroundColor Green
-        <#
-        $SendAsRemoved = Get-Mailbox $EmailBoxName | Remove-ADPermission -User $UserName -ExtendedRights "Send As" -ErrorAction Stop -WarningAction Stop 
-        if ($SendAsRemoved) {
-            Write-Host "Send As removed" -ForegroundColor Green
-        } else {
-            Write-Host "Removing Send As cancelled" -ForegroundColor Red
-            $Granted = $false
-        }
-        #>
     } catch { 
         Write-Host "Send As removal failed" -ForegroundColor Red
-        # Write-Error $_
-        # Write-Warning $_
         $Granted = $false 
     }
     return $Granted
@@ -155,9 +131,9 @@ function Write-Note {
 
 function Select-Mailbox {
     param ($EmailBoxName, $OperationChoice)
-
     do {
         if (!$EmailBoxName) {
+            Write-Host "No Email Box"
             if ($OperationChoice -eq 1) {
                 Write-Host -NoNewline "Please provide a target "
                 Write-Host -NoNewline "User/Mailbox " -ForegroundColor Yellow
@@ -268,8 +244,8 @@ function Select-Mailbox {
             }
         }
         else {
-            # $EmailBoxAddress = $EmailBoxName
-            $IsEmailBoxExist = $false
+            $EmailBoxAddress = $EmailBoxName
+            $IsEmailBoxExist = $true
         }
     } while ($IsEmailBoxExist -eq $false)
 
@@ -517,17 +493,27 @@ function Show-MenuSub {
     } while (!$Choice)
 }
 
-Connect-Exch
+
 
 # Main
+
+Connect-Exch
+
 do {
     Clear-Host
     Show-MastheadLogo
+    
+    # Write-Host "Continue: $ConfirmContinue"
+    # Write-Host "Operation Choice: $OperationChoice"
+    # Write-Host "Email Box Name: $EmaiBoxName"
+    # Write-Host "User Id: $UserName"
+    # Write-Host "User Name: $UserFullName"
+    
     $ConfirmContinue = 'n'
     $OperationChoice = Show-MenuMailTypeSelection -OperationChoice $OperationChoice
-    $EmailBoxName   = Select-Mailbox -EmailBoxName $EmailBoxName -OperationChoice $OperationChoice # will retun mailbox address
-    $UserName       = Select-User -Identity $UserName
-    $UserFullName =     Get-ADUser -Identity $UserName -Properties DisplayName | select-object -expandproperty DisplayName
+    $EmailBoxName    = Select-Mailbox -EmailBoxName $EmailBoxName -OperationChoice $OperationChoice # will retun mailbox address
+    $UserName        = Select-User -Identity $UserName
+    $UserFullName    = Get-ADUser -Identity $UserName -Properties DisplayName | select-object -expandproperty DisplayName
     do {
         $TryAgainAccess = $true
         $Access = Show-MenuMailDelegation -UserName $UserName -EmailBoxName $EmailBoxName -OperationChoice $OperationChoice
@@ -584,12 +570,12 @@ do {
         if ($Access -eq 'x') {
             $Choice = Show-MenuSub
             switch ($Choice) {
-                0 
+                0 # Quit Program
                 { 
                     $TryAgainAccess = $false
                     $ConfirmContinue = 'n'
                 }
-                1 # Do other operation on the same user
+                1 # Go back to previous menu
                 { $TryAgainAccess = $true }
                 2 # Change user
                 {   $UserName = $null
@@ -597,13 +583,13 @@ do {
                     $ConfirmContinue = 'y'
                     Write-Host "Email Address = $EmailAddress"
                 }
-                3 # Change email box
+                3 # Change target Mailbox
                 {   $EmailBoxName = $null
                     $EmailAddress = $null
                     $TryAgainAccess = $false
                     $ConfirmContinue = 'y'
                 }
-                4 # quit
+                4 # Quit Menu (to change both user & Mailbox)
                 {   Write-Host "Quiting..." -ForegroundColor DarkGreen
                     $TryAgainAccess = $false
                     $ConfirmContinue = 'n'

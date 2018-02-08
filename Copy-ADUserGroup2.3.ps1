@@ -123,7 +123,7 @@ function Show-Greeting {
 ## Main process block 
 
 # Filter out the security groups containing the keywords blow 
-$Filter = "CTX|XenAPP|Administrator|Cisco|UAT Users|UAT - Users|OBJECTIVE USERS A|RDP|APP MS Office 2016 x86 ProPlus|APP MS Office 365|O365Licensing"
+$Filter = "CTX|XenAPP|Administrator|Cisco|UAT Users|UAT - Users|OBJECTIVE USERS A|RDP|APP MS Office 2016 x86 ProPlus|APP MS Office 365|O365Licensing|lync|Office 356 Test Users"
 
 do {
     Clear-Host
@@ -176,17 +176,6 @@ do {
 
     } while ($TryAgain)
 
-
-    # Write-Host "`n[Common Groups]" -ForegroundColor Yellow
-    # Write-Host "====================================================" -ForegroundColor Yellow
-    # Compare-GroupMembership -ReferenceUser $src_user -DeferenceUser $dst_user -Comparison "==" -ShortName $true
-
-    # Write-Host "`n[Different Groups - $dst_user_name only]" -ForegroundColor Yellow
-    # Write-Host "====================================================" -ForegroundColor Yellow
-    # Compare-GroupMembership -ReferenceUser $src_user -DeferenceUser $dst_user -Comparison "=>" -ShortName $true
-
-    # Write-Host "`n[Reference Groups - $src_user_name only]" -ForegroundColor Yellow
-    # Write-Host "====================================================" -ForegroundColor Yellow
     $DifferentGroups = Compare-GroupMembership -ReferenceUser $src_user -DeferenceUser $dst_user -Comparison "<="
     # $DifferentGroups | ForEach-Object {([regex]::split($_,'^CN=|,.+$'))[1]}
         

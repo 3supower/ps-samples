@@ -24,11 +24,11 @@ if exist h:\scripts\includes (
 
 if exist h:\scripts\files ( 
 	echo CHECK  : Scripts\files folder already exist
-	copy /Y \\dc1wfs01\home\_PSscripts_\Files\*.pdf H:\scripts\files
+	copy /Y \\dc1wfs01\home\_PSscripts_\Files\*.* H:\scripts\files
 ) else (
 	mkdir h:\scripts\files
 	echo CHECK  : scripts\files folder created
-	copy /Y \\dc1wfs01\home\_PSscripts_\Files\*.pdf H:\scripts\files
+	copy /Y \\dc1wfs01\home\_PSscripts_\Files\*.* H:\scripts\files
 )
 
 echo.
@@ -61,10 +61,13 @@ ECHO.
 ECHO PLEASE MAKE A CHOICE		     
 ECHO.
 ECHO.
-ECHO		1  Check User Account Lock Status and Password reset (AD only)
-ECHO		8  Check Mobile Device Access (AIRCARD AND MOBILEIRON)
-ECHO		10 Check User Info
-ECHO		0  EXIT
+ECHO		(1).  Check User Account Lock Status and Password reset (AD only)
+ECHO.
+ECHO		(8).  Check Mobile Device Access (AIRCARD AND MOBILEIRON)
+ECHO.
+ECHO		(10). Check User Info
+ECHO.
+ECHO		(0).  EXIT
 ECHO.
 ECHO.
 SET /P M=Type the number then press ENTER: 
@@ -110,12 +113,18 @@ ECHO		(9).   DL Access
 echo.
 ECHO		(10).  User Info
 echo.
+echo		(11).  Mapping Drive
+echo.
+echo		(12).  Shared Mailbox - User List
+echo.
 ECHO		(0).   EXIT
 ECHO.
 ECHO.
 SET /P M=Type the number then press ENTER: 
 ECHO.
-IF %M% ==0  GOTO GETOUT 
+IF %M% ==0  GOTO GETOUT
+IF %M% ==12 GOTO SMUL
+IF %M% ==11 GOTO MMAP
 IF %M% ==10 GOTO CHKMNG
 IF %M% ==9  GOTO DL
 IF %M% ==8  GOTO MDM
@@ -131,6 +140,14 @@ GOTO END
 :GETOUT
 rem EXIT
 GOTO QUIT
+
+:SMUL
+powershell.exe -File H:\Scripts\list-sharedMail-Users.ps1
+GOTO END
+
+:MMAP
+powershell.exe -File H:\Scripts\Manual-Mapping.ps1
+GOTO END
 
 :NET_ACC
 powershell.exe -File H:\Scripts\Get-FolderAccess.ps1

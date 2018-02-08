@@ -6,8 +6,8 @@ param ([string]$Identity)
 
 function Write-Letter {
     param($Identity, $Registration)
-    $ConfirmLetter = Read-Host "Write a letter? (Y/n)"
-
+    # $ConfirmLetter = Read-Host "Write a letter? (Y/n)"
+    $ConfirmLetter = 'y'
     if ($ConfirmLetter -ieq 'y') {
         $UserName = Get-ADUser -Identity $Identity -Properties GivenName | Select-Object -ExpandProperty GivenName
         $YourName = (Get-ADUser $env:USERNAME).GivenName
@@ -52,7 +52,8 @@ Portal: https://portal.govconnect.nsw.gov.au
 function Write-Note {
     param ($Identity, $Registration)
 
-    $ConfirmNote = Read-Host "Write a note? (y/n)"
+    # $ConfirmNote = Read-Host "Write a note? (y/n)"
+    $ConfirmNote = 'y'
     if ($ConfirmNote -ieq "y") {
         $TicketNumber = Read-Host "Ticket Number please"
         $Today = Get-Date -Format "dd-MMM-yyyy"

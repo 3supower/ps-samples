@@ -4,10 +4,27 @@
 #-Exchange Functions-----------------------------------------------------------------------------
 function Get-ConnectExch {
     [CmdletBinding()]
-	param ([Parameter()][string]$ConnectionUri = "http://dc1wexcamb01.govnet.nsw.gov.au/PowerShell/")
+	param ([Parameter()][string]$ConnectionUri = "http://Dc1wexcamb03.govnet.nsw.gov.au/PowerShell/")
+    # param ([Parameter()][string]$ConnectionUri = "http://dc1wexcamb01.govnet.nsw.gov.au/PowerShell/")
+    
     if (!(Get-PSSession | Where-Object { $_.ConfigurationName -eq "Microsoft.Exchange" })) {
         $session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $ConnectionUri
         Import-Module (Import-PSSession $session -AllowClobber) -Global
+    }
+}
+
+# Get-ConnectExch
+
+Function Connect-Exch {
+    [CmdletBinding()]
+	# Param ([parameter()][string]$ConnectionUri = "http://dc1wexcamb01.govnet.nsw.gov.au/PowerShell/")
+    param ([Parameter()][string]$ConnectionUri = "http://Dc1wexcamb03.govnet.nsw.gov.au/PowerShell/")
+    if (!(Get-PSSession | Where-Object { $_.ConfigurationName -eq "Microsoft.Exchange" })) { 
+        Write-Host "Connecting Exchange Server... `nPlease wait..." -ForegroundColor DarkGreen
+        $session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $ConnectionUri
+        Import-Module (Import-PSSession $session -AllowClobber) -Global
+    } else {
+        Write-Host "Existing Exch Session" -ForegroundColor DarkBlue
     }
 }
 
@@ -390,6 +407,63 @@ function Get-LDAPUserDetail {
 }
 
 #-AD Functions------------------------------------------------------------------------------------
+function inputbox_user{
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+
+    $Form = New-Object System.Windows.Forms.Form
+    $Form.width = 300
+    $Form.height = 200
+    $Form.Text = ”User Details”
+    # $Font = New-Object System.Drawing.Font("Times New Roman",12)
+    # $Form.Font = $Font
+    $Form.StartPosition = "CenterScreen"
+
+    $objLabel = New-Object System.Windows.Forms.Label
+    $objLabel.Location = New-Object System.Drawing.Size(10,20) 
+    $objLabel.Size = New-Object System.Drawing.Size(280,20) 
+    $objLabel.Text = "Please enter the User name or ID in the space below:"
+    $Form.Controls.Add($objLabel) 
+
+    $objTextBox = New-Object System.Windows.Forms.TextBox 
+    $objTextBox.Location = New-Object System.Drawing.Size(10,40) 
+    $objTextBox.Size = New-Object System.Drawing.Size(260,20) 
+    $Form.Controls.Add($objTextBox)
+
+
+    # $eventHandler = [System.EventHandler]{$objTextBox.Text;$form.Close()}
+    <#
+    $eventHandler = [System.EventHandler]{
+        $textBox1.Text
+        $textBox2.Text
+        $textBox3.Text
+        $form.Close()
+    }
+    #>
+
+    $OKButton = new-object System.Windows.Forms.Button
+    $OKButton.Location = new-object System.Drawing.Size(15,100)
+    $OKButton.Size = new-object System.Drawing.Size(100,40)
+    $OKButton.Text = "OK"
+    # $OKButton.Add_Click({Validate -Text $objTextBox.Text})
+    # $OKButton.Add_Click({$Form.Close()})
+    $OKButton.Add_Click({$objTextBox.Text;$Form.Close()})
+    $form.Controls.Add($OKButton)
+
+    $CancelButton = new-object System.Windows.Forms.Button
+    $CancelButton.Location = new-object System.Drawing.Size(155,100)
+    $CancelButton.Size = new-object System.Drawing.Size(100,40)
+    $CancelButton.Text = "Cancel"
+    $CancelButton.Add_Click({$Form.Close()})
+    $form.Controls.Add($CancelButton)
+    
+    $Form.Add_Shown({$Form.Activate()})
+    [void] $Form.ShowDialog()
+    
+    return $objTextBox.Text
+}
+
+
 function Select-User {
     [CmdletBinding()]
     param ([string]$Identity,[string]$Flag)
@@ -403,6 +477,7 @@ function Select-User {
 
             if (!$Identity) {
                 $UserName = (Read-Host "User name or ID").Trim()
+                # $UserName = inputbox_user
             } else {
                 $UserName = $Identity.Trim()
             }
